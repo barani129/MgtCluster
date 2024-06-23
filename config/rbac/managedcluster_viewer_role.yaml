@@ -1,0 +1,27 @@
+# permissions for end users to view managedclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: managedcluster-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: managed-cluster
+    app.kubernetes.io/part-of: managed-cluster
+    app.kubernetes.io/managed-by: kustomize
+  name: managedcluster-viewer-role
+rules:
+- apiGroups:
+  - monitoring.cloudsya.com
+  resources:
+  - managedclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.cloudsya.com
+  resources:
+  - managedclusters/status
+  verbs:
+  - get

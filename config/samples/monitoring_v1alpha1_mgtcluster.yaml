@@ -1,0 +1,12 @@
+apiVersion: monitoring.cloudsya.com/v1alpha1
+kind: MgtCluster
+metadata:
+  labels:
+    app.kubernetes.io/name: managed-cluster
+    app.kubernetes.io/managed-by: kustomize
+  name: managedcluster-sample
+spec:
+  clusterFQDN: "google.com"
+  port: "443"
+  suspendAlert: false
+  email: "baranitharanece@gmail.com"
