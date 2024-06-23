@@ -124,7 +124,7 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// filename := fmt.Sprintf("/%s.txt", clusterSpec.ClusterFQDN)
 	if clusterStatus.LastPollTime == nil {
 		log.Log.Info("triggering server FQDN reachability")
-		err := clusterUtil.CheckServerAliveness(filename, clusterSpec, clusterStatus)
+		err := clusterUtil.CheckServerAliveness(clusterSpec, clusterStatus)
 		if err != nil {
 			log.Log.Error(err, fmt.Sprintf("Cluster %s is unreachable.", clusterSpec.ClusterFQDN))
 			if !clusterSpec.SuspendAlert {
@@ -143,7 +143,7 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		timeDiff := clusterStatus.LastPollTime.Time.Before(pastTime)
 		if timeDiff {
 			log.Log.Info("triggering server FQDN reachability as the time elapsed")
-			err := clusterUtil.CheckServerAliveness(filename, clusterSpec, clusterStatus)
+			err := clusterUtil.CheckServerAliveness(clusterSpec, clusterStatus)
 			if err != nil {
 				log.Log.Error(err, fmt.Sprintf("Cluster %s is unreachable.", clusterSpec.ClusterFQDN))
 				if !clusterSpec.SuspendAlert {
