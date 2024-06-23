@@ -79,7 +79,8 @@ func CheckServerAliveness(spec *v1alpha1.MgtClusterSpec, status *v1alpha1.MgtClu
 	// if resp.StatusCode != 200 || resp == nil {
 	// 	return fmt.Errorf("cluster %s is unreachable", spec.ClusterFQDN)
 	// }
-	cmd := exec.Command("/bin/bash", "/usr/bin/nc", "-zv", spec.ClusterFQDN, spec.Port)
+	command := fmt.Sprintf("/usr/bin/nc -w 3 -zv %s %s", spec.ClusterFQDN, spec.Port)
+	cmd := exec.Command("/bin/bash", "-c", command)
 	err := cmd.Run()
 	if err != nil {
 		return fmt.Errorf("cluster %s is unreachable", spec.ClusterFQDN)

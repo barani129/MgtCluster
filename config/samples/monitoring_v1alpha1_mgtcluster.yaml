@@ -10,3 +10,4 @@ spec:
   port: "443"
   suspendAlert: false
   email: "baranitharanece@gmail.com"
+  relayHost: ""
