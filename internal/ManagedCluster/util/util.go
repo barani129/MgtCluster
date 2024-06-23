@@ -1,12 +1,9 @@
 package util
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"os"
 	"os/exec"
-	"time"
 
 	"github.com/barani129/MgtCluster/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,28 +58,32 @@ func SetReadyCondition(status *v1alpha1.MgtClusterStatus, conditionStatus v1alph
 	}
 }
 
-func CheckServerAliveness(filename string, spec *v1alpha1.MgtClusterSpec, status *v1alpha1.MgtClusterStatus) error {
-	url := fmt.Sprintf(`https://%s:%s`, spec.ClusterFQDN, spec.Port)
-	tr := http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{
-		Timeout:   5 * time.Second,
-		Transport: &tr,
-	}
+func CheckServerAliveness(spec *v1alpha1.MgtClusterSpec, status *v1alpha1.MgtClusterStatus) error {
+	// url := fmt.Sprintf(`https://%s:%s`, spec.ClusterFQDN, spec.Port)
+	// tr := http.Transport{
+	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	// }
+	// client := &http.Client{
+	// 	Timeout:   5 * time.Second,
+	// 	Transport: &tr,
+	// }
 
-	req, err := http.NewRequest("GET", url, nil)
+	// req, err := http.NewRequest("GET", url, nil)
+	// if err != nil {
+	// 	return err
+	// }
+	// resp, err := client.Do(req)
+	// if err != nil {
+	// 	return err
+	// }
+	// if resp.StatusCode != 200 || resp == nil {
+	// 	return fmt.Errorf("cluster %s is unreachable", spec.ClusterFQDN)
+	// }
+	cmd := exec.Command("/bin/bash", "/usr/bin/nc", "-zv", spec.ClusterFQDN, spec.Port)
+	err := cmd.Run()
 	if err != nil {
-		return err
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != 200 || resp == nil {
 		return fmt.Errorf("cluster %s is unreachable", spec.ClusterFQDN)
 	}
-	defer resp.Body.Close()
 	now := metav1.Now()
 	status.LastPollTime = &now
 	return nil
