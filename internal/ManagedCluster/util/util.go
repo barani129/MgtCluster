@@ -103,7 +103,8 @@ func SendEmailAlert(filename string, spec *v1alpha1.MgtClusterSpec) {
 			writeFile(filename, spec)
 		}
 	} else {
-		data, _ := ReadFile(filename, spec)
+		data, _ := ReadFile(filename)
+		fmt.Println(data)
 		if data != "sent" {
 			FQDN := spec.ClusterFQDN
 			if FQDN != "" {
@@ -119,6 +120,25 @@ func SendEmailAlert(filename string, spec *v1alpha1.MgtClusterSpec) {
 	}
 }
 
+func SendEmailReachableAlert(filename string, spec *v1alpha1.MgtClusterSpec) {
+	data, err := ReadFile(filename)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(data)
+	if data == "sent" {
+		FQDN := spec.ClusterFQDN
+		if FQDN != "" {
+			message := fmt.Sprintf(`/bin/echo "cluster %s is reachable again" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
+			cmd3 := exec.Command("/bin/bash", "-c", message)
+			err := cmd3.Run()
+			if err != nil {
+				fmt.Printf("Failed to send the alert: %s", err)
+			}
+		}
+	}
+}
+
 func writeFile(filename string, spec *v1alpha1.MgtClusterSpec) error {
 	err := os.WriteFile(filename, []byte("sent"), 0644)
 	if err != nil {
@@ -127,7 +147,7 @@ func writeFile(filename string, spec *v1alpha1.MgtClusterSpec) error {
 	return nil
 }
 
-func ReadFile(filename string, spec *v1alpha1.MgtClusterSpec) (string, error) {
+func ReadFile(filename string) (string, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
