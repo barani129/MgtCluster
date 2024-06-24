@@ -129,15 +129,12 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			log.Log.Error(err, fmt.Sprintf("Cluster %s is unreachable.", clusterSpec.ClusterFQDN))
 			if !clusterSpec.SuspendAlert {
 				clusterUtil.SendEmailAlert(filename, clusterSpec)
-			} else {
-				if _, err := os.Stat(filename); os.IsExist(err) {
-					os.Remove(filename)
-				}
 			}
 			return ctrl.Result{}, fmt.Errorf("%s", err)
-		} else {
-			report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), nil)
 		}
+		os.Remove(filename)
+		report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), nil)
+
 	} else {
 		pastTime := time.Now().Add(-1 * defaultHealthCheckInterval)
 		timeDiff := clusterStatus.LastPollTime.Time.Before(pastTime)
@@ -148,15 +145,14 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				log.Log.Error(err, fmt.Sprintf("Cluster %s is unreachable.", clusterSpec.ClusterFQDN))
 				if !clusterSpec.SuspendAlert {
 					clusterUtil.SendEmailAlert(filename, clusterSpec)
-				} else {
-					if _, err := os.Stat(filename); os.IsExist(err) {
-						os.Remove(filename)
-					}
 				}
 				return ctrl.Result{}, fmt.Errorf("%s", err)
-			} else {
-				report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), nil)
 			}
+			if !clusterSpec.SuspendAlert {
+				clusterUtil.SendEmailReachableAlert(filename, clusterSpec)
+			}
+			os.Remove(filename)
+			report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), nil)
 		}
 	}
 	return ctrl.Result{RequeueAfter: defaultHealthCheckInterval}, nil
