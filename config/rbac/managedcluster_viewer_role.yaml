@@ -12,7 +12,7 @@ metadata:
   name: managedcluster-viewer-role
 rules:
 - apiGroups:
-  - monitoring.cloudsya.com
+  - monitoring.spark.co.nz
   resources:
   - managedclusters
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - monitoring.cloudsya.com
+  - monitoring.spark.co.nz
   resources:
   - managedclusters/status
   verbs:
