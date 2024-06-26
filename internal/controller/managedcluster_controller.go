@@ -56,8 +56,10 @@ type MgtClusterReconciler struct {
 	recorder                 record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=monitoring.cloudsya.com,resources=managedclusters,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=monitoring.cloudsya.com,resources=managedclusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=managedclusters,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=managedclusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func (r *MgtClusterReconciler) newCluster() (client.Object, error) {
@@ -138,7 +140,6 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			return ctrl.Result{}, fmt.Errorf("%w, configmap name: %s, reason: %v", errGetAuthConfigMap, configmapName, err)
 		}
 		data = configmap.Data
-		fmt.Println(data)
 	}
 
 	// report gives feedback by updating the Ready condition of the managed cluster
