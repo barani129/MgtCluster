@@ -1,4 +1,4 @@
-apiVersion: monitoring.cloudsya.com/v1alpha1
+apiVersion: monitoring.spark.co.nz/v1alpha1
 kind: MgtCluster
 metadata:
   labels:
@@ -8,6 +8,12 @@ metadata:
 spec:
   clusterFQDN: "google.com"
   port: "443"
-  suspendAlert: false
+  suspendAlert: true
   email: "baranitharanece@gmail.com"
   relayHost: ""
+  externalData: remalert
+  notifyExternal: true
+  externalSecret: remalert
+  externalURL: "http://duma.com"
+
+

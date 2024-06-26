@@ -22,8 +22,12 @@ import (
 	"os"
 	"time"
 
+	"errors"
+
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -38,12 +42,18 @@ const (
 	defaultHealthCheckInterval = 2 * time.Minute
 )
 
+var (
+	errGetAuthSecret    = errors.New("failed to get Secret containing External alert system credentials")
+	errGetAuthConfigMap = errors.New("failed to get ConfigMap containing the data to be sent to the external alert system")
+)
+
 // ManagedClusterReconciler reconciles a ManagedCluster object
 type MgtClusterReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	Kind     string
-	recorder record.EventRecorder
+	Scheme                   *runtime.Scheme
+	Kind                     string
+	ClusterResourceNamespace string
+	recorder                 record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=monitoring.cloudsya.com,resources=managedclusters,verbs=get;list;watch;create;update;patch;delete
@@ -92,6 +102,45 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		log.Log.Error(err, "unexpected error while getting managed cluster spec and status, not trying.")
 		return ctrl.Result{}, nil
 	}
+
+	secretName := types.NamespacedName{
+		Name: clusterSpec.ExternalSecret,
+	}
+
+	configmapName := types.NamespacedName{
+		Name: clusterSpec.ExternalData,
+	}
+
+	switch cluster.(type) {
+	case *monitoringv1alpha1.MgtCluster:
+		secretName.Namespace = r.ClusterResourceNamespace
+		configmapName.Namespace = r.ClusterResourceNamespace
+	default:
+		log.Log.Error(fmt.Errorf("unexpected issuer type: %s", cluster), "not retrying")
+		return ctrl.Result{}, nil
+	}
+
+	var secret corev1.Secret
+	var configmap corev1.ConfigMap
+	var username []byte
+	var password []byte
+	var data map[string]string
+	if clusterSpec.NotifyExtenal {
+		if err := r.Get(ctx, secretName, &secret); err != nil {
+			return ctrl.Result{}, fmt.Errorf("%w, secret name: %s, reason: %v", errGetAuthSecret, secretName, err)
+		}
+		username = secret.Data["username"]
+		password = secret.Data["password"]
+	}
+
+	if clusterSpec.NotifyExtenal {
+		if err := r.Get(ctx, configmapName, &configmap); err != nil {
+			return ctrl.Result{}, fmt.Errorf("%w, configmap name: %s, reason: %v", errGetAuthConfigMap, configmapName, err)
+		}
+		data = configmap.Data
+		fmt.Println(data)
+	}
+
 	// report gives feedback by updating the Ready condition of the managed cluster
 	report := func(conditionStatus monitoringv1alpha1.ConditionStatus, message string, err error) {
 		eventType := corev1.EventTypeNormal
@@ -121,6 +170,7 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, nil
 	}
 	filename := fmt.Sprintf("/%s.txt", clusterSpec.ClusterFQDN)
+	extFile := fmt.Sprintf("/%s-external.txt", clusterSpec.ClusterFQDN)
 	// filename := fmt.Sprintf("/%s.txt", clusterSpec.ClusterFQDN)
 	if clusterStatus.LastPollTime == nil {
 		log.Log.Info("triggering server FQDN reachability")
@@ -130,9 +180,19 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			if !clusterSpec.SuspendAlert {
 				clusterUtil.SendEmailAlert(filename, clusterSpec)
 			}
+			if clusterSpec.NotifyExtenal {
+				err := clusterUtil.NotifyExternalSystem(data, "firing", clusterSpec.ExternalURL, string(username), string(password), extFile, clusterStatus)
+				if err != nil {
+					log.Log.Error(err, "Failed to notify the external system")
+				}
+				now := metav1.Now()
+				clusterStatus.ExternalNotifiedTime = &now
+			}
 			return ctrl.Result{}, fmt.Errorf("%s", err)
 		}
-		os.Remove(filename)
+		// os.Remove(filename)
+		// os.Remove(extFile)
+		clusterStatus.ExternalNotified = false
 		report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), nil)
 
 	} else {
@@ -146,12 +206,36 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				if !clusterSpec.SuspendAlert {
 					clusterUtil.SendEmailAlert(filename, clusterSpec)
 				}
+				if clusterSpec.NotifyExtenal {
+					err := clusterUtil.SubNotifyExternalSystem(data, "firing", clusterSpec.ExternalURL, string(username), string(password), extFile, clusterStatus)
+					if err != nil {
+						log.Log.Error(err, "Failed to notify the external system")
+					}
+					now := metav1.Now()
+					clusterStatus.ExternalNotifiedTime = &now
+				}
 				return ctrl.Result{}, fmt.Errorf("%s", err)
 			}
-			if !clusterSpec.SuspendAlert {
-				clusterUtil.SendEmailReachableAlert(filename, clusterSpec)
+
+			if _, err := os.Stat(extFile); os.IsNotExist(err) {
+				// no action
+			} else {
+				if !clusterSpec.SuspendAlert {
+					clusterUtil.SendEmailReachableAlert(filename, clusterSpec)
+				}
+				if clusterSpec.NotifyExtenal {
+					err := clusterUtil.SubNotifyExternalSystem(data, "resolved", clusterSpec.ExternalURL, string(username), string(password), extFile, clusterStatus)
+					if err != nil {
+						log.Log.Error(err, "Failed to notify the external system")
+					}
+					now := metav1.Now()
+					clusterStatus.ExternalNotifiedTime = &now
+				}
+				os.Remove(filename)
+				os.Remove(extFile)
 			}
-			os.Remove(filename)
+
+			clusterStatus.ExternalNotified = false
 			report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), nil)
 		}
 	}

@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: mgtclusters.monitoring.cloudsya.com
+  name: mgtclusters.monitoring.spark.co.nz
 spec:
-  group: monitoring.cloudsya.com
+  group: monitoring.spark.co.nz
   names:
     kind: MgtCluster
     listKind: MgtClusterList
@@ -15,6 +15,10 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
+    - description: object creation timestamp(in cluster's timezone)
+      jsonPath: .metadata.creationTimestamp
+      name: CreatedAt
+      type: string
     - description: whether cluster is reachable on the give IP and port
       jsonPath: .status.conditions[].status
       name: Reachable
@@ -23,9 +27,9 @@ spec:
       jsonPath: .status.lastPollTime
       name: LastSuccessfulPollTime
       type: string
-    - description: object creation timestamp(in cluster's timezone)
-      jsonPath: .metadata.creationTimestamp
-      name: CreatedAt
+    - description: indicates if the external system is notified
+      jsonPath: .status.externalNotified
+      name: ExternalNotified
       type: string
     name: v1alpha1
     schema:
@@ -59,6 +63,20 @@ spec:
               email:
                 description: Target user's email for cluster status notification
                 type: string
+              externalData:
+                description: Data to be sent to the external system in the form of
+                  config map
+                type: string
+              externalSecret:
+                description: Secret which has the username and password to post the
+                  alert notification to the external system
+                type: string
+              externalURL:
+                description: URL of the external alert system
+                type: string
+              notifyExternal:
+                description: To notify the external alerting system
+                type: boolean
               port:
                 description: Port is the Openshift/kubernetes cluster port where service
                   is running
@@ -67,12 +85,16 @@ spec:
                 description: Relay host for sending the email
                 type: string
               suspendAlert:
-                description: SuspendAlerts if set to true, target users will not be
-                  notified
+                description: Suspends email alerts if set to true, target users will
+                  not be notified
                 type: boolean
             required:
             - clusterFQDN
             - email
+            - externalData
+            - externalSecret
+            - externalURL
+            - notifyExternal
             - port
             - relayHost
             type: object
@@ -117,6 +139,14 @@ spec:
                   - type
                   type: object
                 type: array
+              externalNotified:
+                description: Indicates if external alerting system is notified
+                type: boolean
+              externalNotifiedTime:
+                description: Indicates the timestamp when external alerting system
+                  is notified
+                format: date-time
+                type: string
               lastPollTime:
                 description: last successful timestamp of retrieved cluster status
                 format: date-time
