@@ -24,7 +24,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
-	EventSource                 = "spark-issuer"
+	EventSource                 = "mgtcluster"
 	EventReasonIssuerReconciler = "MgtClusterReconciler"
 )
 
@@ -39,7 +39,7 @@ type MgtClusterSpec struct {
 	// Port is the Openshift/kubernetes cluster port where service is running
 	Port string `json:"port"`
 
-	// SuspendAlerts if set to true, target users will not be notified
+	// Suspends email alerts if set to true, target users will not be notified
 	SuspendAlert bool `json:"suspendAlert,omitempty"`
 
 	// Target user's email for cluster status notification
@@ -47,6 +47,18 @@ type MgtClusterSpec struct {
 
 	// Relay host for sending the email
 	RelayHost string `json:"relayHost"`
+
+	// To notify the external alerting system
+	NotifyExtenal bool `json:"notifyExternal"`
+
+	// URL of the external alert system
+	ExternalURL string `json:"externalURL"`
+
+	// Data to be sent to the external system in the form of config map
+	ExternalData string `json:"externalData"`
+
+	// Secret which has the username and password to post the alert notification to the external system
+	ExternalSecret string `json:"externalSecret"`
 }
 
 // MgtClusterStatus defines the observed state of MgtCluster
@@ -61,6 +73,14 @@ type MgtClusterStatus struct {
 	// last successful timestamp of retrieved cluster status
 	// +optional
 	LastPollTime *metav1.Time `json:"lastPollTime,omitempty"`
+
+	// Indicates if external alerting system is notified
+	// +optional
+	ExternalNotified bool `json:"externalNotified"`
+
+	// Indicates the timestamp when external alerting system is notified
+	// +optional
+	ExternalNotifiedTime *metav1.Time `json:"externalNotifiedTime"`
 }
 
 //+kubebuilder:object:root=true
@@ -68,9 +88,10 @@ type MgtClusterStatus struct {
 //+kubebuilder:resource:scope=Cluster
 
 // MgtCluster is the Schema for the MgtClusters API
+// +kubebuilder:printcolumn:name="CreatedAt",type="string",JSONPath=".metadata.creationTimestamp",description="object creation timestamp(in cluster's timezone)"
 // +kubebuilder:printcolumn:name="Reachable",type="string",JSONPath=".status.conditions[].status",description="whether cluster is reachable on the give IP and port"
 // +kubebuilder:printcolumn:name="LastSuccessfulPollTime",type="string",JSONPath=".status.lastPollTime",description="last poll timestamp(in cluster's timezone)"
-// +kubebuilder:printcolumn:name="CreatedAt",type="string",JSONPath=".metadata.creationTimestamp",description="object creation timestamp(in cluster's timezone)"
+// +kubebuilder:printcolumn:name="ExternalNotified",type="string",JSONPath=".status.externalNotified",description="indicates if the external system is notified"
 type MgtCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
