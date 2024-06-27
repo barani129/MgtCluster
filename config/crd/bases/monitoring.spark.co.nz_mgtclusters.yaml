@@ -31,6 +31,10 @@ spec:
       jsonPath: .status.externalNotified
       name: ExternalNotified
       type: string
+    - description: incident ID from service now
+      jsonPath: .status.incidentID
+      name: IncidentID
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -147,10 +151,15 @@ spec:
                   is notified
                 format: date-time
                 type: string
+              incidentID:
+                description: Incident ID from the rem. Spark specific
+                type: string
               lastPollTime:
                 description: last successful timestamp of retrieved cluster status
                 format: date-time
                 type: string
+            required:
+            - incidentID
             type: object
         type: object
     served: true

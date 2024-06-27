@@ -188,6 +188,16 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				}
 				now := metav1.Now()
 				clusterStatus.ExternalNotifiedTime = &now
+				fingerprint, err := clusterUtil.ReadFile(extFile)
+				fmt.Println(fingerprint)
+				if err != nil {
+					log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+				}
+				incident, err := clusterUtil.SetIncidentID(clusterSpec, clusterStatus, string(username), string(password), fingerprint)
+				if err != nil || incident == "" {
+					log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+				}
+				clusterStatus.IncidentID = incident
 			}
 			return ctrl.Result{}, fmt.Errorf("%s", err)
 		}
@@ -214,6 +224,16 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 					}
 					now := metav1.Now()
 					clusterStatus.ExternalNotifiedTime = &now
+					fingerprint, err := clusterUtil.ReadFile(extFile)
+					fmt.Println(fingerprint)
+					if err != nil {
+						log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+					}
+					incident, err := clusterUtil.SetIncidentID(clusterSpec, clusterStatus, string(username), string(password), fingerprint)
+					if err != nil || incident == "" {
+						log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+					}
+					clusterStatus.IncidentID = incident
 				}
 				return ctrl.Result{}, fmt.Errorf("%s", err)
 			}
@@ -235,7 +255,6 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				os.Remove(filename)
 				os.Remove(extFile)
 			}
-
 			clusterStatus.ExternalNotified = false
 			report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), nil)
 		}
