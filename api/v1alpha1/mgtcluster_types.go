@@ -81,6 +81,9 @@ type MgtClusterStatus struct {
 	// Indicates the timestamp when external alerting system is notified
 	// +optional
 	ExternalNotifiedTime *metav1.Time `json:"externalNotifiedTime"`
+
+	// Incident ID from the rem. Spark specific
+	IncidentID string `json:"incidentID"`
 }
 
 //+kubebuilder:object:root=true
@@ -92,6 +95,7 @@ type MgtClusterStatus struct {
 // +kubebuilder:printcolumn:name="Reachable",type="string",JSONPath=".status.conditions[].status",description="whether cluster is reachable on the give IP and port"
 // +kubebuilder:printcolumn:name="LastSuccessfulPollTime",type="string",JSONPath=".status.lastPollTime",description="last poll timestamp(in cluster's timezone)"
 // +kubebuilder:printcolumn:name="ExternalNotified",type="string",JSONPath=".status.externalNotified",description="indicates if the external system is notified"
+// +kubebuilder:printcolumn:name="IncidentID",type="string",JSONPath=".status.incidentID",description="incident ID from service now"
 type MgtCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
