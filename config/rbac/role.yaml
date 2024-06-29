@@ -30,7 +30,7 @@ rules:
 - apiGroups:
   - monitoring.spark.co.nz
   resources:
-  - managedclusters
+  - portscans
   verbs:
   - create
   - delete
@@ -42,7 +42,7 @@ rules:
 - apiGroups:
   - monitoring.spark.co.nz
   resources:
-  - managedclusters/status
+  - portscans/status
   verbs:
   - get
   - patch

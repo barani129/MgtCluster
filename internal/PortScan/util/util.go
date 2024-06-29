@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/barani129/MgtCluster/api/v1alpha1"
+	"github.com/barani129/PortScan/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -94,36 +94,36 @@ type RemResponse struct {
 	Enrichment          any    `json:"Enrichment"`
 }
 
-func GetSpecAndStatus(MgtCluster client.Object) (*v1alpha1.MgtClusterSpec, *v1alpha1.MgtClusterStatus, error) {
-	switch t := MgtCluster.(type) {
-	case *v1alpha1.MgtCluster:
+func GetSpecAndStatus(PortScan client.Object) (*v1alpha1.PortScanSpec, *v1alpha1.PortScanStatus, error) {
+	switch t := PortScan.(type) {
+	case *v1alpha1.PortScan:
 		return &t.Spec, &t.Status, nil
 	default:
 		return nil, nil, fmt.Errorf("not a managed cluster type: %t", t)
 	}
 }
 
-func GetReadyCondition(status *v1alpha1.MgtClusterStatus) *v1alpha1.MgtClusterCondition {
+func GetReadyCondition(status *v1alpha1.PortScanStatus) *v1alpha1.PortScanCondition {
 	for _, c := range status.Conditions {
-		if c.Type == v1alpha1.MgtClusterConditionReady {
+		if c.Type == v1alpha1.PortScanConditionReady {
 			return &c
 		}
 	}
 	return nil
 }
 
-func IsReady(status *v1alpha1.MgtClusterStatus) bool {
+func IsReady(status *v1alpha1.PortScanStatus) bool {
 	if c := GetReadyCondition(status); c != nil {
 		return c.Status == v1alpha1.ConditionTrue
 	}
 	return false
 }
 
-func SetReadyCondition(status *v1alpha1.MgtClusterStatus, conditionStatus v1alpha1.ConditionStatus, reason, message string) {
+func SetReadyCondition(status *v1alpha1.PortScanStatus, conditionStatus v1alpha1.ConditionStatus, reason, message string) {
 	ready := GetReadyCondition(status)
 	if ready == nil {
-		ready = &v1alpha1.MgtClusterCondition{
-			Type: v1alpha1.MgtClusterConditionReady,
+		ready = &v1alpha1.PortScanCondition{
+			Type: v1alpha1.PortScanConditionReady,
 		}
 		status.Conditions = append(status.Conditions, *ready)
 	}
@@ -135,14 +135,14 @@ func SetReadyCondition(status *v1alpha1.MgtClusterStatus, conditionStatus v1alph
 	ready.Reason = reason
 	ready.Message = message
 	for i, c := range status.Conditions {
-		if c.Type == v1alpha1.MgtClusterConditionReady {
+		if c.Type == v1alpha1.PortScanConditionReady {
 			status.Conditions[i] = *ready
 			return
 		}
 	}
 }
 
-func CheckServerAliveness(spec *v1alpha1.MgtClusterSpec, status *v1alpha1.MgtClusterStatus) error {
+func CheckServerAliveness(spec *v1alpha1.PortScanSpec, status *v1alpha1.PortScanStatus) error {
 	// url := fmt.Sprintf(`https://%s:%s`, spec.ClusterFQDN, spec.Port)
 	// tr := http.Transport{
 	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -163,11 +163,11 @@ func CheckServerAliveness(spec *v1alpha1.MgtClusterSpec, status *v1alpha1.MgtClu
 	// if resp.StatusCode != 200 || resp == nil {
 	// 	return fmt.Errorf("cluster %s is unreachable", spec.ClusterFQDN)
 	// }
-	command := fmt.Sprintf("/usr/bin/nc -w 3 -zv %s %s", spec.ClusterFQDN, spec.Port)
+	command := fmt.Sprintf("/usr/bin/nc -w 3 -zv %s %s", spec.Target, spec.Port)
 	cmd := exec.Command("/bin/bash", "-c", command)
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("cluster %s is unreachable", spec.ClusterFQDN)
+		return fmt.Errorf("cluster %s is unreachable", spec.Target)
 	}
 	now := metav1.Now()
 	status.LastPollTime = &now
@@ -180,7 +180,7 @@ func randomString(length int) string {
 	return fmt.Sprintf("%x", b)[2 : length+2]
 }
 
-func SetIncidentID(spec *v1alpha1.MgtClusterSpec, status *v1alpha1.MgtClusterStatus, username string, password string, fingerprint string) (string, error) {
+func SetIncidentID(spec *v1alpha1.PortScanSpec, status *v1alpha1.PortScanStatus, username string, password string, fingerprint string) (string, error) {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
@@ -219,7 +219,7 @@ func SetIncidentID(spec *v1alpha1.MgtClusterSpec, status *v1alpha1.MgtClusterSta
 	return x.TTNumber, nil
 }
 
-func SubNotifyExternalSystem(data map[string]string, status string, url string, username string, password string, filename string, clstatus *v1alpha1.MgtClusterStatus) error {
+func SubNotifyExternalSystem(data map[string]string, status string, url string, username string, password string, filename string, clstatus *v1alpha1.PortScanStatus) error {
 	var fingerprint string
 	var err error
 	if status == "resolved" {
@@ -264,7 +264,7 @@ func SubNotifyExternalSystem(data map[string]string, status string, url string, 
 	return nil
 }
 
-func NotifyExternalSystem(data map[string]string, status string, url string, username string, password string, filename string, clstatus *v1alpha1.MgtClusterStatus) error {
+func NotifyExternalSystem(data map[string]string, status string, url string, username string, password string, filename string, clstatus *v1alpha1.PortScanStatus) error {
 	fig, _ := ReadFile(filename)
 	if fig != "" {
 		log.Printf("External system has already been notified for url %s . Exiting", url)
@@ -296,6 +296,8 @@ func NotifyExternalSystem(data map[string]string, status string, url string, use
 	}
 	writeFile(filename, fingerprint)
 	clstatus.ExternalNotified = true
+	now := metav1.Now()
+	clstatus.ExternalNotifiedTime = &now
 	return nil
 }
 
@@ -304,9 +306,9 @@ func basicAuth(username, password string) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-func SendEmailAlert(filename string, spec *v1alpha1.MgtClusterSpec) {
+func SendEmailAlert(filename string, spec *v1alpha1.PortScanSpec) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		FQDN := spec.ClusterFQDN
+		FQDN := spec.Target
 		if FQDN != "" {
 			message := fmt.Sprintf(`/bin/echo "cluster %s is unreachable" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)
@@ -320,7 +322,7 @@ func SendEmailAlert(filename string, spec *v1alpha1.MgtClusterSpec) {
 		data, _ := ReadFile(filename)
 		fmt.Println(data)
 		if data != "sent" {
-			FQDN := spec.ClusterFQDN
+			FQDN := spec.Target
 			if FQDN != "" {
 				message := fmt.Sprintf(`/bin/echo "cluster %s is unreachable" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
 				cmd3 := exec.Command("/bin/bash", "-c", message)
@@ -334,14 +336,14 @@ func SendEmailAlert(filename string, spec *v1alpha1.MgtClusterSpec) {
 	}
 }
 
-func SendEmailReachableAlert(filename string, spec *v1alpha1.MgtClusterSpec) {
+func SendEmailReachableAlert(filename string, spec *v1alpha1.PortScanSpec) {
 	data, err := ReadFile(filename)
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println(data)
 	if data == "sent" {
-		FQDN := spec.ClusterFQDN
+		FQDN := spec.Target
 		if FQDN != "" {
 			message := fmt.Sprintf(`/bin/echo "cluster %s is reachable again" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)

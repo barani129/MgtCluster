@@ -34,8 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	monitoringv1alpha1 "github.com/barani129/MgtCluster/api/v1alpha1"
-	clusterUtil "github.com/barani129/MgtCluster/internal/ManagedCluster/util"
+	monitoringv1alpha1 "github.com/barani129/PortScan/api/v1alpha1"
+	clusterUtil "github.com/barani129/PortScan/internal/PortScan/util"
 )
 
 const (
@@ -47,8 +47,8 @@ var (
 	errGetAuthConfigMap = errors.New("failed to get ConfigMap containing the data to be sent to the external alert system")
 )
 
-// ManagedClusterReconciler reconciles a ManagedCluster object
-type MgtClusterReconciler struct {
+// PortScanReconciler reconciles a PortScan object
+type PortScanReconciler struct {
 	client.Client
 	Scheme                   *runtime.Scheme
 	Kind                     string
@@ -56,15 +56,15 @@ type MgtClusterReconciler struct {
 	recorder                 record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=managedclusters,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=managedclusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=portscans,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=portscans/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
-func (r *MgtClusterReconciler) newCluster() (client.Object, error) {
-	managedclusterGVK := monitoringv1alpha1.GroupVersion.WithKind(r.Kind)
-	ro, err := r.Scheme.New(managedclusterGVK)
+func (r *PortScanReconciler) newCluster() (client.Object, error) {
+	PortScanGVK := monitoringv1alpha1.GroupVersion.WithKind(r.Kind)
+	ro, err := r.Scheme.New(PortScanGVK)
 	if err != nil {
 		return nil, err
 	}
@@ -74,13 +74,13 @@ func (r *MgtClusterReconciler) newCluster() (client.Object, error) {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the ManagedCluster object against the actual cluster state, and then
+// the PortScan object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.2/pkg/reconcile
-func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
+func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -88,7 +88,7 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	cluster, err := r.newCluster()
 
 	if err != nil {
-		log.Log.Error(err, "unrecognized managed cluster type")
+		log.Log.Error(err, "unrecognized Port scan type")
 		return ctrl.Result{}, err
 	}
 
@@ -96,12 +96,12 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		if err := client.IgnoreNotFound(err); err != nil {
 			return ctrl.Result{}, fmt.Errorf("unexpected get error : %v", err)
 		}
-		log.Log.Info("Managed cluster is not found, ignoring")
+		log.Log.Info("Port scan is not found, ignoring")
 		return ctrl.Result{}, nil
 	}
 	clusterSpec, clusterStatus, err := clusterUtil.GetSpecAndStatus(cluster)
 	if err != nil {
-		log.Log.Error(err, "unexpected error while getting managed cluster spec and status, not trying.")
+		log.Log.Error(err, "unexpected error while getting Port scan spec and status, not trying.")
 		return ctrl.Result{}, nil
 	}
 
@@ -114,7 +114,7 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	switch cluster.(type) {
-	case *monitoringv1alpha1.MgtCluster:
+	case *monitoringv1alpha1.PortScan:
 		secretName.Namespace = r.ClusterResourceNamespace
 		configmapName.Namespace = r.ClusterResourceNamespace
 	default:
@@ -142,7 +142,7 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		data = configmap.Data
 	}
 
-	// report gives feedback by updating the Ready condition of the managed cluster
+	// report gives feedback by updating the Ready condition of the Port scan
 	report := func(conditionStatus monitoringv1alpha1.ConditionStatus, message string, err error) {
 		eventType := corev1.EventTypeNormal
 		if err != nil {
@@ -158,7 +158,7 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	defer func() {
 		if err != nil {
-			report(monitoringv1alpha1.ConditionFalse, fmt.Sprintf("Trouble reaching the cluster %s on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), err)
+			report(monitoringv1alpha1.ConditionFalse, fmt.Sprintf("Trouble reaching the cluster %s on port %s", clusterSpec.Target, clusterSpec.Port), err)
 		}
 		if updateErr := r.Status().Update(ctx, cluster); updateErr != nil {
 			err = utilerrors.NewAggregate([]error{err, updateErr})
@@ -170,15 +170,15 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		report(monitoringv1alpha1.ConditionUnknown, "First Seen", nil)
 		return ctrl.Result{}, nil
 	}
-	filename := fmt.Sprintf("/%s.txt", clusterSpec.ClusterFQDN)
-	extFile := fmt.Sprintf("/%s-external.txt", clusterSpec.ClusterFQDN)
+	filename := fmt.Sprintf("/%s.txt", clusterSpec.Target)
+	extFile := fmt.Sprintf("/%s-external.txt", clusterSpec.Target)
 	// filename := fmt.Sprintf("/%s.txt", clusterSpec.ClusterFQDN)
 	if clusterStatus.LastPollTime == nil {
 		log.Log.Info("triggering server FQDN reachability")
 		err := clusterUtil.CheckServerAliveness(clusterSpec, clusterStatus)
 		if err != nil {
-			log.Log.Error(err, fmt.Sprintf("Cluster %s is unreachable.", clusterSpec.ClusterFQDN))
-			if !clusterSpec.SuspendAlert {
+			log.Log.Error(err, fmt.Sprintf("Cluster %s is unreachable.", clusterSpec.Target))
+			if !clusterSpec.SuspendEmail {
 				clusterUtil.SendEmailAlert(filename, clusterSpec)
 			}
 			if clusterSpec.NotifyExtenal {
@@ -186,8 +186,6 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				if err != nil {
 					log.Log.Error(err, "Failed to notify the external system")
 				}
-				now := metav1.Now()
-				clusterStatus.ExternalNotifiedTime = &now
 				fingerprint, err := clusterUtil.ReadFile(extFile)
 				fmt.Println(fingerprint)
 				if err != nil {
@@ -204,7 +202,7 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		// os.Remove(filename)
 		// os.Remove(extFile)
 		clusterStatus.ExternalNotified = false
-		report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), nil)
+		report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.Target, clusterSpec.Port), nil)
 
 	} else {
 		pastTime := time.Now().Add(-1 * defaultHealthCheckInterval)
@@ -213,8 +211,8 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			log.Log.Info("triggering server FQDN reachability as the time elapsed")
 			err := clusterUtil.CheckServerAliveness(clusterSpec, clusterStatus)
 			if err != nil {
-				log.Log.Error(err, fmt.Sprintf("Cluster %s is unreachable.", clusterSpec.ClusterFQDN))
-				if !clusterSpec.SuspendAlert {
+				log.Log.Error(err, fmt.Sprintf("Cluster %s is unreachable.", clusterSpec.Target))
+				if !clusterSpec.SuspendEmail {
 					clusterUtil.SendEmailAlert(filename, clusterSpec)
 				}
 				if clusterSpec.NotifyExtenal {
@@ -222,8 +220,6 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 					if err != nil {
 						log.Log.Error(err, "Failed to notify the external system")
 					}
-					now := metav1.Now()
-					clusterStatus.ExternalNotifiedTime = &now
 					fingerprint, err := clusterUtil.ReadFile(extFile)
 					fmt.Println(fingerprint)
 					if err != nil {
@@ -241,7 +237,7 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			if _, err := os.Stat(extFile); os.IsNotExist(err) {
 				// no action
 			} else {
-				if !clusterSpec.SuspendAlert {
+				if !clusterSpec.SuspendEmail {
 					clusterUtil.SendEmailReachableAlert(filename, clusterSpec)
 				}
 				if clusterSpec.NotifyExtenal {
@@ -256,16 +252,16 @@ func (r *MgtClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				os.Remove(extFile)
 			}
 			clusterStatus.ExternalNotified = false
-			report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.ClusterFQDN, clusterSpec.Port), nil)
+			report(monitoringv1alpha1.ConditionTrue, fmt.Sprintf("Success. Cluster %s is reachable on port %s", clusterSpec.Target, clusterSpec.Port), nil)
 		}
 	}
 	return ctrl.Result{RequeueAfter: defaultHealthCheckInterval}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *MgtClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *PortScanReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor(monitoringv1alpha1.EventSource)
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&monitoringv1alpha1.MgtCluster{}).
+		For(&monitoringv1alpha1.PortScan{}).
 		Complete(r)
 }

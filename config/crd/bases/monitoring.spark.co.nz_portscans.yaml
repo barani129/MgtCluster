@@ -4,14 +4,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: mgtclusters.monitoring.spark.co.nz
+  name: portscans.monitoring.spark.co.nz
 spec:
   group: monitoring.spark.co.nz
   names:
-    kind: MgtCluster
-    listKind: MgtClusterList
-    plural: mgtclusters
-    singular: mgtcluster
+    kind: PortScan
+    listKind: PortScanList
+    plural: portscans
+    singular: portscan
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -38,7 +38,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: MgtCluster is the Schema for the MgtClusters API
+        description: PortScan is the Schema for the PortScans API
         properties:
           apiVersion:
             description: |-
@@ -58,12 +58,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: MgtClusterSpec defines the desired state of MgtCluster
+            description: PortScanSpec defines the desired state of PortScan
             properties:
-              clusterFQDN:
-                description: ClusterFQDN is the Openshift/kubernetes cluster hostname
-                  URL
-                type: string
               email:
                 description: Target user's email for cluster status notification
                 type: string
@@ -88,12 +84,15 @@ spec:
               relayHost:
                 description: Relay host for sending the email
                 type: string
-              suspendAlert:
+              suspendEmail:
                 description: Suspends email alerts if set to true, target users will
                   not be notified
                 type: boolean
+              target:
+                description: ClusterFQDN is the Openshift/kubernetes cluster hostname
+                  URL
+                type: string
             required:
-            - clusterFQDN
             - email
             - externalData
             - externalSecret
@@ -101,9 +100,10 @@ spec:
             - notifyExternal
             - port
             - relayHost
+            - target
             type: object
           status:
-            description: MgtClusterStatus defines the observed state of MgtCluster
+            description: PortScanStatus defines the observed state of PortScan
             properties:
               conditions:
                 description: |-
