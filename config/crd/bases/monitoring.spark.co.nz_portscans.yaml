@@ -69,10 +69,11 @@ spec:
                 type: string
               externalSecret:
                 description: Secret which has the username and password to post the
-                  alert notification to the external system
+                  alert notification to the external system using Authorization header
                 type: string
               externalURL:
-                description: URL of the external alert system
+                description: 'URL of the external alert system. Example: http://notify.example.com/
+                  (both http/https supported with basic authentication)'
                 type: string
               notifyExternal:
                 description: To notify the external alerting system

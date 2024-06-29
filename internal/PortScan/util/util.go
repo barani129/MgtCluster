@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -181,12 +182,22 @@ func randomString(length int) string {
 }
 
 func SetIncidentID(spec *v1alpha1.PortScanSpec, status *v1alpha1.PortScanStatus, username string, password string, fingerprint string) (string, error) {
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
 	url := spec.ExternalURL
 	nurl := strings.SplitAfter(url, "co.nz")
 	getUrl := nurl[0] + "/rem/api/event/v1/query"
+	var client *http.Client
+	if strings.Contains(getUrl, "https://") {
+		tr := http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client = &http.Client{
+			Timeout:   5 * time.Second,
+			Transport: &tr,
+		}
+	}
+	client = &http.Client{
+		Timeout: 5 * time.Second,
+	}
 	req, err := http.NewRequest("GET", getUrl, nil)
 	fmt.Println(req)
 	if err != nil {
@@ -239,7 +250,17 @@ func SubNotifyExternalSystem(data map[string]string, status string, url string, 
 	data["startsAt"] = time.Now().String()
 	m, b := data, new(bytes.Buffer)
 	json.NewEncoder(b).Encode(m)
-	client := &http.Client{
+	var client *http.Client
+	if strings.Contains(url, "https://") {
+		tr := http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client = &http.Client{
+			Timeout:   5 * time.Second,
+			Transport: &tr,
+		}
+	}
+	client = &http.Client{
 		Timeout: 5 * time.Second,
 	}
 	req, err := http.NewRequest("POST", url, b)
@@ -276,7 +297,17 @@ func NotifyExternalSystem(data map[string]string, status string, url string, use
 	data["startsAt"] = time.Now().String()
 	m, b := data, new(bytes.Buffer)
 	json.NewEncoder(b).Encode(m)
-	client := &http.Client{
+	var client *http.Client
+	if strings.Contains(url, "https://") {
+		tr := http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client = &http.Client{
+			Timeout:   5 * time.Second,
+			Transport: &tr,
+		}
+	}
+	client = &http.Client{
 		Timeout: 5 * time.Second,
 	}
 	req, err := http.NewRequest("POST", url, b)
