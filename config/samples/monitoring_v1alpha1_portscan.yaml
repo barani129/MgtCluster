@@ -1,5 +1,5 @@
 apiVersion: monitoring.spark.co.nz/v1alpha1
-kind: MgtCluster
+kind: PortScan
 metadata:
   labels:
     app.kubernetes.io/name: managed-cluster

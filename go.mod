@@ -1,4 +1,4 @@
-module github.com/barani129/MgtCluster
+module github.com/barani129/PortScan
 
 go 1.21
 

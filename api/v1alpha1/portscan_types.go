@@ -24,23 +24,23 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
-	EventSource                 = "mgtcluster"
-	EventReasonIssuerReconciler = "MgtClusterReconciler"
+	EventSource                 = "PortScan"
+	EventReasonIssuerReconciler = "PortScanReconciler"
 )
 
-// MgtClusterSpec defines the desired state of MgtCluster
-type MgtClusterSpec struct {
+// PortScanSpec defines the desired state of PortScan
+type PortScanSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// ClusterFQDN is the Openshift/kubernetes cluster hostname URL
-	ClusterFQDN string `json:"clusterFQDN"`
+	Target string `json:"target"`
 
 	// Port is the Openshift/kubernetes cluster port where service is running
 	Port string `json:"port"`
 
 	// Suspends email alerts if set to true, target users will not be notified
-	SuspendAlert bool `json:"suspendAlert,omitempty"`
+	SuspendEmail bool `json:"suspendEmail,omitempty"`
 
 	// Target user's email for cluster status notification
 	Email string `json:"email"`
@@ -61,14 +61,14 @@ type MgtClusterSpec struct {
 	ExternalSecret string `json:"externalSecret"`
 }
 
-// MgtClusterStatus defines the observed state of MgtCluster
-type MgtClusterStatus struct {
+// PortScanStatus defines the observed state of PortScan
+type PortScanStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	// list of status conditions to indicate the status of managed cluster
 	// known conditions are 'Ready'.
 	// +optional
-	Conditions []MgtClusterCondition `json:"conditions,omitempty"`
+	Conditions []PortScanCondition `json:"conditions,omitempty"`
 
 	// last successful timestamp of retrieved cluster status
 	// +optional
@@ -90,32 +90,32 @@ type MgtClusterStatus struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster
 
-// MgtCluster is the Schema for the MgtClusters API
+// PortScan is the Schema for the PortScans API
 // +kubebuilder:printcolumn:name="CreatedAt",type="string",JSONPath=".metadata.creationTimestamp",description="object creation timestamp(in cluster's timezone)"
 // +kubebuilder:printcolumn:name="Reachable",type="string",JSONPath=".status.conditions[].status",description="whether cluster is reachable on the give IP and port"
 // +kubebuilder:printcolumn:name="LastSuccessfulPollTime",type="string",JSONPath=".status.lastPollTime",description="last poll timestamp(in cluster's timezone)"
 // +kubebuilder:printcolumn:name="ExternalNotified",type="string",JSONPath=".status.externalNotified",description="indicates if the external system is notified"
 // +kubebuilder:printcolumn:name="IncidentID",type="string",JSONPath=".status.incidentID",description="incident ID from service now"
-type MgtCluster struct {
+type PortScan struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MgtClusterSpec   `json:"spec,omitempty"`
-	Status MgtClusterStatus `json:"status,omitempty"`
+	Spec   PortScanSpec   `json:"spec,omitempty"`
+	Status PortScanStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// MgtClusterList contains a list of MgtCluster
-type MgtClusterList struct {
+// PortScanList contains a list of PortScan
+type PortScanList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []MgtCluster `json:"items"`
+	Items           []PortScan `json:"items"`
 }
 
-type MgtClusterCondition struct {
+type PortScanCondition struct {
 	// Type of the condition, known values are 'Ready'.
-	Type MgtClusterConditionType `json:"type"`
+	Type PortScanConditionType `json:"type"`
 
 	// Status of the condition, one of ('True', 'False', 'Unknown')
 	Status ConditionStatus `json:"status"`
@@ -133,13 +133,13 @@ type MgtClusterCondition struct {
 }
 
 // ManagedConditionType represents a managed cluster condition value.
-type MgtClusterConditionType string
+type PortScanConditionType string
 
 const (
-	// MgtClusterConditionReady represents the fact that a given managed cluster condition
+	// PortScanConditionReady represents the fact that a given managed cluster condition
 	// is in reachable from the ACM/source cluster.
 	// If the `status` of this condition is `False`, managed cluster is unreachable
-	MgtClusterConditionReady MgtClusterConditionType = "Ready"
+	PortScanConditionReady PortScanConditionType = "Ready"
 )
 
 // ConditionStatus represents a condition's status.
@@ -163,5 +163,5 @@ const (
 )
 
 func init() {
-	SchemeBuilder.Register(&MgtCluster{}, &MgtClusterList{})
+	SchemeBuilder.Register(&PortScan{}, &PortScanList{})
 }

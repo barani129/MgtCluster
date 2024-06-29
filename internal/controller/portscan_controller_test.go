@@ -27,10 +27,10 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	monitoringv1alpha1 "github.com/barani129/MgtCluster/api/v1alpha1"
+	monitoringv1alpha1 "github.com/barani129/PortScan/api/v1alpha1"
 )
 
-var _ = Describe("MgtCluster Controller", func() {
+var _ = Describe("PortScan Controller", func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 
@@ -40,13 +40,13 @@ var _ = Describe("MgtCluster Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		MgtCluster := &monitoringv1alpha1.MgtCluster{}
+		PortScan := &monitoringv1alpha1.PortScan{}
 
 		BeforeEach(func() {
-			By("creating the custom resource for the Kind MgtCluster")
-			err := k8sClient.Get(ctx, typeNamespacedName, MgtCluster)
+			By("creating the custom resource for the Kind PortScan")
+			err := k8sClient.Get(ctx, typeNamespacedName, PortScan)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &monitoringv1alpha1.MgtCluster{
+				resource := &monitoringv1alpha1.PortScan{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -59,16 +59,16 @@ var _ = Describe("MgtCluster Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &monitoringv1alpha1.MgtCluster{}
+			resource := &monitoringv1alpha1.PortScan{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Cleanup the specific resource instance MgtCluster")
+			By("Cleanup the specific resource instance PortScan")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &MgtClusterReconciler{
+			controllerReconciler := &PortScanReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}

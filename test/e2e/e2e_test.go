@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/barani129/MgtCluster/test/utils"
+	"github.com/barani129/PortScan/test/utils"
 )
 
 const namespace = "managed-cluster-system"

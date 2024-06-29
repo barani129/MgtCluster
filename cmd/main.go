@@ -21,7 +21,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -36,8 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	monitoringv1alpha1 "github.com/barani129/MgtCluster/api/v1alpha1"
-	"github.com/barani129/MgtCluster/internal/controller"
+	monitoringv1alpha1 "github.com/barani129/PortScan/api/v1alpha1"
+	"github.com/barani129/PortScan/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -141,13 +140,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.MgtClusterReconciler{
-		Kind:                     "MgtCluster",
+	if err = (&controller.PortScanReconciler{
+		Kind:                     "PortScan",
 		Client:                   mgr.GetClient(),
 		Scheme:                   mgr.GetScheme(),
 		ClusterResourceNamespace: clusterResourceNamespace,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "MgtCluster")
+		setupLog.Error(err, "unable to create controller", "controller", "PortScan")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
@@ -182,7 +181,7 @@ func getInClusterNamespace() (string, error) {
 	}
 
 	// Load the namespace file and return its content
-	namespace, err := ioutil.ReadFile(inClusterNamespacePath)
+	namespace, err := os.ReadFile(inClusterNamespacePath)
 	if err != nil {
 		return "", fmt.Errorf("error reading namespace file: %w", err)
 	}

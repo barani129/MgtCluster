@@ -1,4 +1,4 @@
-# permissions for end users to edit managedclusters.
+# permissions for end users to edit portscans.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -6,15 +6,15 @@ metadata:
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/instance: managedcluster-editor-role
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: managed-cluster
-    app.kubernetes.io/part-of: managed-cluster
+    app.kubernetes.io/created-by: port-scan
+    app.kubernetes.io/part-of: port-scan
     app.kubernetes.io/managed-by: kustomize
   name: managedcluster-editor-role
 rules:
 - apiGroups:
   - monitoring.spark.co.nz
   resources:
-  - managedclusters
+  - portscans
   verbs:
   - create
   - delete
@@ -26,6 +26,6 @@ rules:
 - apiGroups:
   - monitoring.spark.co.nz
   resources:
-  - managedclusters/status
+  - portscans/status
   verbs:
   - get
