@@ -9,7 +9,6 @@ To understand the fields in spec, please execute the following command after ins
 ```sh
 kubectl/oc explain portscans.monitoring.spark.co.nz
 ```
-kubectl/oc explain port
 
 ## Getting Started
 
