@@ -1,9 +1,15 @@
-# mgtcluster
-A custom resource approach way to monitor any remote kubernetes API (or any URL) from the source kubernetes and alert the user using sendmail and relay host.
+# portscan
+A custom resource approach way to monitor any remote kubernetes API (or any URL (IP/FQDN with port)) from the source kubernetes and alert the user using sendmail and relay host and alert any external system.
 
 ## Description
 A custom resource approach way to monitor any remote kubernetes API (or any URL) from the source kubernetes and alert the user using sendmail and relay host
 . Check the sample file for configuration.
+
+To understand the fields in spec, please execute the following command after installing the CRD.
+```sh
+kubectl/oc explain portscans.monitoring.spark.co.nz
+```
+kubectl/oc explain port
 
 ## Getting Started
 
@@ -89,13 +95,6 @@ Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/<org>/managed-cluster/<tag or branch>/dist/install.yaml
 ```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
 ## License
 
