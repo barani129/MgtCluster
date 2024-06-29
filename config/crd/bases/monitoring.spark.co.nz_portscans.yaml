@@ -89,8 +89,9 @@ spec:
                   not be notified
                 type: boolean
               target:
-                description: ClusterFQDN is the Openshift/kubernetes cluster hostname
-                  URL
+                description: Target is the Openshift/kubernetes cluster hostname URL
+                  or any IP/FQDN (If FQDN is used, it should be resolvable via DNS
+                  query)
                 type: string
             required:
             - email

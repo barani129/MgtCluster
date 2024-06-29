@@ -33,7 +33,7 @@ type PortScanSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// ClusterFQDN is the Openshift/kubernetes cluster hostname URL
+	// Target is the Openshift/kubernetes cluster hostname URL or any IP/FQDN (If FQDN is used, it should be resolvable via DNS query)
 	Target string `json:"target"`
 
 	// Port is the Openshift/kubernetes cluster port where service is running
