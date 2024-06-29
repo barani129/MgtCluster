@@ -51,13 +51,13 @@ type PortScanSpec struct {
 	// To notify the external alerting system
 	NotifyExtenal bool `json:"notifyExternal"`
 
-	// URL of the external alert system
+	// URL of the external alert system. Example: http://notify.example.com/ (both http/https supported with basic authentication)
 	ExternalURL string `json:"externalURL"`
 
 	// Data to be sent to the external system in the form of config map
 	ExternalData string `json:"externalData"`
 
-	// Secret which has the username and password to post the alert notification to the external system
+	// Secret which has the username and password to post the alert notification to the external system using Authorization header
 	ExternalSecret string `json:"externalSecret"`
 }
 
