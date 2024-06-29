@@ -1,9 +1,14 @@
 # portscan
-A custom resource approach to monitor any remote kubernetes API (or any URL) from the source kubernetes and alert the user using sendmail and relay host.
+A custom resource approach way to monitor any remote kubernetes API (or any URL (IP/FQDN with port)) from the source kubernetes and alert the user using sendmail and relay host and alert any external system.
 
 ## Description
 A custom resource approach way to monitor any remote kubernetes API (or any URL) from the source kubernetes and alert the user using sendmail and relay host
 . Check the sample file for configuration.
+
+To understand the fields in spec, please execute the following command after installing the CRD.
+```sh
+kubectl/oc explain portscans.monitoring.spark.co.nz
+```
 
 ## Getting Started
 
