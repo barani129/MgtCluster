@@ -1,4 +1,4 @@
-# mgtcluster
+# portscan
 A custom resource approach to monitor any remote kubernetes API (or any URL) from the source kubernetes and alert the user using sendmail and relay host.
 
 ## Description
