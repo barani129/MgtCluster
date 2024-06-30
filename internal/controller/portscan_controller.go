@@ -158,7 +158,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 
 	defer func() {
 		if err != nil {
-			report(monitoringv1alpha1.ConditionFalse, fmt.Sprintf("Trouble reaching the cluster %s on port %s", clusterSpec.Target, clusterSpec.Port), err)
+			report(monitoringv1alpha1.ConditionFalse, fmt.Sprintf("Trouble reaching the target %s on port %s", clusterSpec.Target, clusterSpec.Port), err)
 		}
 		if updateErr := r.Status().Update(ctx, cluster); updateErr != nil {
 			err = utilerrors.NewAggregate([]error{err, updateErr})
@@ -221,7 +221,6 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 						log.Log.Error(err, "Failed to notify the external system")
 					}
 					fingerprint, err := clusterUtil.ReadFile(extFile)
-					fmt.Println(fingerprint)
 					if err != nil {
 						log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 					}
