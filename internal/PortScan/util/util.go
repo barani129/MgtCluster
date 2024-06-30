@@ -341,7 +341,7 @@ func SendEmailAlert(filename string, spec *v1alpha1.PortScanSpec) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		FQDN := spec.Target
 		if FQDN != "" {
-			message := fmt.Sprintf(`/bin/echo "cluster %s is unreachable" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
+			message := fmt.Sprintf(`/bin/echo "target %s is unreachable" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)
 			err := cmd3.Run()
 			if err != nil {
@@ -355,7 +355,7 @@ func SendEmailAlert(filename string, spec *v1alpha1.PortScanSpec) {
 		if data != "sent" {
 			FQDN := spec.Target
 			if FQDN != "" {
-				message := fmt.Sprintf(`/bin/echo "cluster %s is unreachable" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
+				message := fmt.Sprintf(`/bin/echo "target %s is unreachable" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
 				cmd3 := exec.Command("/bin/bash", "-c", message)
 				err := cmd3.Run()
 				if err != nil {
@@ -376,7 +376,7 @@ func SendEmailReachableAlert(filename string, spec *v1alpha1.PortScanSpec) {
 	if data == "sent" {
 		FQDN := spec.Target
 		if FQDN != "" {
-			message := fmt.Sprintf(`/bin/echo "cluster %s is reachable again" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
+			message := fmt.Sprintf(`/bin/echo "target %s is reachable again" | /usr/sbin/sendmail -f %s -S %s %s`, FQDN, spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)
 			err := cmd3.Run()
 			if err != nil {
